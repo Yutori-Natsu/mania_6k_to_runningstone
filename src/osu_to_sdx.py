@@ -20,8 +20,16 @@ def convert_osu_to_sdx(osu_path, output_dir):
     general = general_match.group(1)
     timing_points = timing_points_match.group(1).strip().split('\n')
     first_timing_point = timing_points[0].split(',')
-    bpm = 60000 / float(first_timing_point[1])
+    first_bpm = 60000 / float(first_timing_point[1])
     offset = int(first_timing_point[0]) / 1000
+    timing_changes = []
+    for tp in timing_points:
+        tp_data = tp.split(',')
+        time = int(tp_data[0]) / 1000
+        bpm = 60000 / float(tp_data[1]) if float(tp_data[1]) > 0 else None 
+        if bpm:
+            timing_changes.append((time, bpm))
+
     audio_filename_match = re.search(r'AudioFilename:\s*"?(.*?)"?\s*$', general, re.MULTILINE)
     if not audio_filename_match:
         messagebox.showerror("Error", "AudioFilename not found in [General] section.")
@@ -48,6 +56,8 @@ def convert_osu_to_sdx(osu_path, output_dir):
     hit_objects = hit_objects_match.group(1).strip().split('\n')
     processed_notes = []
     used_times = {} 
+    current_bpm = timing_changes[0][1] if timing_changes else 120
+    current_offset = offset
     for obj in hit_objects:
         obj_data = obj.split(',')
         x = int(obj_data[0])
@@ -57,7 +67,24 @@ def convert_osu_to_sdx(osu_path, output_dir):
         track = (x // 128) + 1
         if track == 4:
             track = 2
-        beat_time = (time - offset) * (bpm / 60)
+        while timing_changes and time >= timing_changes[0][0]:
+            change_time, new_bpm = timing_changes.pop(0)
+            beat_time = (change_time - current_offset) * (current_bpm / 60)
+            beat = int(beat_time)
+            fraction = beat_time - beat
+            denominator = 1920  # 使用 1920 作为分母
+            numerator = int(fraction * denominator)
+
+            # 插入 BPM 变化音符
+            bpm_change_key = (beat, numerator, denominator)
+            if bpm_change_key not in used_times:
+                processed_notes.append(f"B,{beat},{numerator},{denominator},{new_bpm}")
+                used_times[bpm_change_key] = 'B'
+
+            # 更新当前 BPM 和 offset
+            current_offset = change_time
+            current_bpm = new_bpm
+        beat_time = (time - current_offset) * (current_bpm / 60)
         beat = int(beat_time)
         fraction = beat_time - beat
         denominator = 1920  
@@ -65,18 +92,18 @@ def convert_osu_to_sdx(osu_path, output_dir):
         if obj_type & 128:  
             aaa=obj_data[5].split(':')
             end_time = int(aaa[0]) / 1000 
-            end_beat_time = (end_time - offset) * (bpm / 60)
+            end_beat_time = (end_time - current_offset) * (current_bpm / 60)
             end_beat = int(end_beat_time)
             end_fraction = end_beat_time - end_beat
             end_numerator = int(end_fraction * denominator)
             key = (beat, numerator, denominator)
             if key not in used_times:
-                processed_notes.append(f"D,{beat},{numerator},{denominator},{track},1")
-                used_times[key] = 'D'
+                processed_notes.append(f"X,{beat},{numerator},{denominator},{track},1")
+                used_times[key] = 'X'
             end_key = (end_beat, end_numerator, denominator)
             if end_key not in used_times:
-                processed_notes.append(f"D,{end_beat},{end_numerator},{denominator},{track},1")
-                used_times[end_key] = 'D'
+                processed_notes.append(f"X,{end_beat},{end_numerator},{denominator},{track},1")
+                used_times[end_key] = 'X'
         else:  
             key = (beat, numerator, denominator)
             if key not in used_times:
@@ -90,7 +117,7 @@ def convert_osu_to_sdx(osu_path, output_dir):
         data_sdz += f"author = {metadata.get('Artist', 'Unknown')}\n"
         data_sdz += f"mapper = {metadata.get('Creator', 'Unknown')}\n"
         data_sdz += f"level = 5\n"  
-        data_sdz += f"bpm = {int(bpm)}\n"
+        data_sdz += f"bpm = {int(first_bpm)}\n"
         data_sdz += f"offset = {offset}\n"
         data_sdz += f"bg_offset = 0\n\n"
         data_sdz += "[Data]\n" + "\n".join(processed_notes)
