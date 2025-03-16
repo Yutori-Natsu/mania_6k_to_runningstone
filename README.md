@@ -11,8 +11,8 @@ This script converts osu! Mania 4K beatmaps to the SDX format. It processes the 
 
 ## Requirements
 - Python 3.x
-- `Pillow` library for image processing (`pip install pillow`)
-- `tkinter` for file dialogs (usually included with Python)
+- `Pillow` library for image processing
+- `tkinter` for file dialogs
 
 ## Usage
 1. Place the script in the same directory as your `.osu` file.
@@ -21,10 +21,10 @@ This script converts osu! Mania 4K beatmaps to the SDX format. It processes the 
 4. The script will generate an `.sdx` file in the specified directory.
 
 ## Installation
-1. Clone the repository or download the script file.
+1. Clone the repository or get an executable file through [Releases](https://github.com/yukoimi/mania_to_runningstone/releases).
 2. Install the required libraries:
    ```bash
-   pip install pillow
+   pip install -r requirements.txt
    ```
 
 ## License
