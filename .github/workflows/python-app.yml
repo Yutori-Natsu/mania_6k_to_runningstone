@@ -34,7 +34,9 @@ jobs:
       - name: Generate Release Version
         id: version
         run: |
-          echo "::set-output name=version::1.0${{ github.run_number }}-$(echo ${{ github.sha }} | cut -c1-7)"
+          $sha = "${{ github.sha }}".Substring(0, 7)
+          echo "version=1.0${{ github.run_number }}-$sha" >> $GITHUB_OUTPUT
+        shell: pwsh
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v1
