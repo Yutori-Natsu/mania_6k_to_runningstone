@@ -34,10 +34,10 @@ jobs:
       - name: Generate Release Version
         id: version
         run: |
-          set SHA_SHORT=%GITHUB_SHA:~0,7%
-          set VERSION=1.0%GITHUB_RUN_NUMBER%-%SHA_SHORT%
-          echo version=%VERSION%>>%GITHUB_OUTPUT%
-          shell: cmd
+          $sha_short = "${{ github.sha }}".Substring(0, 7)
+          $version = "1.0${{ github.run_number }}-$sha_short"
+          echo "version=$version" >> $GITHUB_OUTPUT
+        shell: pwsh
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v1
