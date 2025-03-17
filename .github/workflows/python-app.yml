@@ -41,6 +41,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.VERSION }}
+          tag_name: 1.0${{ github.run_number }}
           name: Release ${{ env.VERSION }}
           files: dist/osu_to_sdx.exe
