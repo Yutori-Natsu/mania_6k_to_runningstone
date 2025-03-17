@@ -2,6 +2,8 @@ name: Build and Release
 
 on:
   push:
+    paths:
+      - 'src/osu_to_sdx.py' 
     branches:
       - main  
 
