@@ -1,10 +1,10 @@
 # osu! Mania to SDX Converter
 
 ## Description
-This script converts osu! Mania 4K beatmaps to the SDX format. It processes the osu! `.osu` file, extracts relevant metadata, audio, and background images, and converts the timing and hit objects accordingly.
+This script converts osu! Mania 3-10K beatmaps to the SDX format. It processes the osu! `.osu` file, extracts relevant metadata, audio, and background images, and converts the timing and hit objects accordingly.
 
 ## Features
-- Converts osu! Mania 4K beatmaps to SDX format.
+- Converts osu! Mania 3-10K beatmaps to SDX format.
 - Handles LN (Long Notes) and normal notes.
 - Ensures correct timing conversion using BPM and offset.
 - Supports background image and audio file extraction.
@@ -12,7 +12,8 @@ This script converts osu! Mania 4K beatmaps to the SDX format. It processes the 
 ## Requirements
 - Python 3.x
 - `Pillow` library for image processing
-- `tkinter` for file dialogs
+- `tkinter` for GUI creating
+- `audioread` and `lameenc` for converting audio files to MP3
 
 ## Usage
 1. Place the script in the same directory as your `.osu` file.
