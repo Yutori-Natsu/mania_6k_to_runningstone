@@ -43,20 +43,17 @@ def convert_audio_to_mp3(input_path, output_path):
         f.write(mp3_data)
 
 def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
-    """Convert osu! file to .sdx format."""
+    """Convert osu! file to .sdx format with proper BPM reset."""
     with open(osu_path, 'r', encoding='utf-8') as file:
         osu_content = file.read()
 
-    
     metadata = {}
     for line in re.findall(r'(\w+):(.+)', osu_content):
         metadata[line[0].strip()] = line[1].strip()
 
-    
     key_mode = detect_key_mode(osu_path)
     track_map = TRACK_MAPPINGS[key_mode]
 
-    
     general_match = re.search(r'\[General\]\n(.*?)(?=\n\[)', osu_content, re.DOTALL)
     timing_points_match = re.search(r'\[TimingPoints\]\n(.*?)(?=\n\[|\Z)', osu_content, re.DOTALL)
     if not general_match or not timing_points_match:
@@ -70,7 +67,6 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
     timing_changes = [(int(tp.split(',')[0]) / 1000, 60000 / float(tp.split(',')[1])) 
                       for tp in timing_points if float(tp.split(',')[1]) > 0]
 
-    
     audio_filename = re.search(r'AudioFilename:\s*"?(.*?)"?\s*$', general, re.MULTILINE).group(1)
     audio_path = os.path.join(os.path.dirname(osu_path), audio_filename)
     audio_ext = os.path.splitext(audio_filename)[1].lower()
@@ -81,7 +77,6 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
     else:
         new_audio_path = None
 
-    
     events_match = re.search(r'\[Events\]\n(.*?)(?=\n\[|\Z)', osu_content, re.DOTALL)
     if not events_match:
         raise ValueError("Missing [Events] section.")
@@ -90,17 +85,15 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
     if not background_filename:
         raise ValueError("Background image not found.")
 
-   
     hit_objects_match = re.search(r'\[HitObjects\]\n(.*?)(?=\n\[|\Z)', osu_content, re.DOTALL)
     if not hit_objects_match:
         raise ValueError("Missing [HitObjects] section.")
     hit_objects = hit_objects_match.group(1).strip().split('\n')
 
-    note_events = []
-    timing_changes = [(int(tp.split(',')[0]) / 1000, 60000 / float(tp.split(',')[1])) 
-                      for tp in timing_points if float(tp.split(',')[1]) > 0]
+    processed_notes = []
+    used_times = {}
     current_bpm = timing_changes[0][1]
-    current_offset = offset
+    current_offset = timing_changes[0][0]  
     timing_idx = 1
 
     total_objects = len(hit_objects)
@@ -110,11 +103,10 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
 
         obj_data = obj.split(',')
         x = int(obj_data[0])
-        time = int(obj_data[2]) / 1000  
+        time = int(obj_data[2]) / 1000
         obj_type = int(obj_data[3])
         track = track_map[x // (512 // key_mode)]
 
-        
         while timing_idx < len(timing_changes) and time >= timing_changes[timing_idx][0]:
             change_time, new_bpm = timing_changes[timing_idx]
             beat_time = (change_time - current_offset) * (current_bpm / 60)
@@ -122,10 +114,14 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
             fraction = beat_time - beat
             denominator = 1920
             numerator = int(fraction * denominator)
-            note_events.append((beat, numerator, denominator, f"B,{beat},{numerator},{denominator},{new_bpm}"))
+            key = (beat, numerator, denominator)
+            if key not in used_times:
+                processed_notes.append(f"B,{beat},{numerator},{denominator},{new_bpm}")
+                used_times[key] = 'B'
             current_offset = change_time
             current_bpm = new_bpm
             timing_idx += 1
+            used_times.clear() 
 
         beat_time = (time - current_offset) * (current_bpm / 60)
         beat = int(beat_time)
@@ -133,27 +129,41 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
         denominator = 1920
         numerator = int(fraction * denominator)
 
-        if obj_type & 128:  # 滑条
-            end_time = int(obj_data[5].split(':')[0]) / 1000  # 结束时间（秒）
+        if obj_type & 128:  
+            end_time = int(obj_data[5].split(':')[0]) / 1000
             end_beat_time = (end_time - current_offset) * (current_bpm / 60)
             end_beat = int(end_beat_time)
             end_fraction = end_beat_time - end_beat
             end_numerator = int(end_fraction * denominator)
-            note_events.append((beat, numerator, denominator, f"X,{beat},{numerator},{denominator},{track},1"))            
-            note_events.append((end_beat, end_numerator, denominator, f"X,{end_beat},{end_numerator},{denominator},{track},1"))
-        else:  
-            note_events.append((beat, numerator, denominator, f"D,{beat},{numerator},{denominator},{track},1"))
+            key = (beat, numerator, denominator)
+            if key not in used_times:
+                processed_notes.append(f"X,{beat},{numerator},{denominator},{track},1")
+                used_times[key] = 'X'
+            end_key = (end_beat, end_numerator, denominator)
+            if end_key not in used_times:
+                processed_notes.append(f"X,{end_beat},{end_numerator},{denominator},{track},1")
+                used_times[end_key] = 'X'
+        else: 
+            key = (beat, numerator, denominator)
+            if key not in used_times:
+                processed_notes.append(f"D,{beat},{numerator},{denominator},{track},1")
+                used_times[key] = 'D'
 
-    note_events.sort(key=lambda x: (x[0], x[1]))
-
-    processed_notes = []
-    seen_keys = set()
-    for event in note_events:
-        beat, numerator, denominator, line = event
+    while timing_idx < len(timing_changes):
+        change_time, new_bpm = timing_changes[timing_idx]
+        beat_time = (change_time - current_offset) * (current_bpm / 60)
+        beat = int(beat_time)
+        fraction = beat_time - beat
+        denominator = 1920
+        numerator = int(fraction * denominator)
         key = (beat, numerator, denominator)
-        if key not in seen_keys:
-            processed_notes.append(line)
-            seen_keys.add(key)
+        if key not in used_times:
+            processed_notes.append(f"B,{beat},{numerator},{denominator},{new_bpm}")
+            used_times[key] = 'B'
+        current_offset = change_time
+        current_bpm = new_bpm
+        timing_idx += 1
+        used_times.clear()
 
     sdx_filename = os.path.basename(osu_path).replace('.osu', '.sdx')
     sdx_path = os.path.join(output_dir, sdx_filename)
