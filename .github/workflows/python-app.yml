@@ -36,7 +36,7 @@ jobs:
         run: |
           $sha_short = "${{ github.sha }}".Substring(0, 7)
           $version = "1.0${{ github.run_number }}-$sha_short"
-          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_ENV
         shell: pwsh
 
       - name: Create Release and Upload Asset
