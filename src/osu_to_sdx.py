@@ -218,7 +218,6 @@ def create_gui():
     root.mainloop()
 
 def convert_button(osu_path, output_dir, progress_var):
-    """Handle conversion button click."""
     if not osu_path or not output_dir:
         messagebox.showwarning("Warning", "Please select both an .osu file and an output directory.")
         return
