@@ -42,7 +42,20 @@ def convert_audio_to_mp3(input_path, output_path):
     with open(output_path, 'wb') as f:
         f.write(mp3_data)
 
+import sys
 def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
+    
+    if len(sys.argv) not in [1, 2, 3]:
+        print("Usage: ./osu_to_sdx.py, ./osu_to_sdx.py <Difficulty> or ./osu_to_sdx.py <Mapper> <Difficulty>")
+        sys.exit(1)
+    mapper = 'hanaraiN'
+    difficulty = 5
+    if len(sys.argv) == 3:
+        mapper = sys.argv[1]
+        difficulty = int(sys.argv[2])
+    if len(sys.argv) == 2:
+        difficulty = int(sys.argv[1])
+
     """Convert osu! file to .sdx format with proper BPM reset."""
     with open(osu_path, 'r', encoding='utf-8') as file:
         osu_content = file.read()
@@ -129,25 +142,16 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
         denominator = 1920
         numerator = int(fraction * denominator)
 
+        obj_content = 'D'
+        obj_num = [1,2,4][(x // (512 // key_mode)) // 3]
+
         if obj_type & 128:  
-            end_time = int(obj_data[5].split(':')[0]) / 1000
-            end_beat_time = (end_time - current_offset) * (current_bpm / 60)
-            end_beat = int(end_beat_time)
-            end_fraction = end_beat_time - end_beat
-            end_numerator = int(end_fraction * denominator)
-            key = (beat, numerator, denominator)
-            if key not in used_times:
-                processed_notes.append(f"X,{beat},{numerator},{denominator},{track},1")
-                used_times[key] = 'X'
-            end_key = (end_beat, end_numerator, denominator)
-            if end_key not in used_times:
-                processed_notes.append(f"X,{end_beat},{end_numerator},{denominator},{track},1")
-                used_times[end_key] = 'X'
-        else: 
-            key = (beat, numerator, denominator)
-            if key not in used_times:
-                processed_notes.append(f"D,{beat},{numerator},{denominator},{track},1")
-                used_times[key] = 'D'
+            obj_content = 'X'
+        
+        key = (beat, numerator, denominator)
+        if key not in used_times:
+            processed_notes.append(f"{obj_content},{beat},{numerator},{denominator},{track},{obj_num}")
+            used_times[key] = obj_content
 
     while timing_idx < len(timing_changes):
         change_time, new_bpm = timing_changes[timing_idx]
@@ -170,8 +174,8 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
     with zipfile.ZipFile(sdx_path, 'w') as sdx_zip:
         data_sdz = f"[Meta]\ntitle = {metadata.get('Title', 'Unknown')}\n"
         data_sdz += f"author = {metadata.get('Artist', 'Unknown')}\n"
-        data_sdz += f"mapper = {metadata.get('Creator', 'Unknown')}\n"
-        data_sdz += "level = 5\n"
+        data_sdz += f"mapper = {mapper}\n"
+        data_sdz += f"level = {difficulty}\n"  
         data_sdz += f"bpm = {int(first_bpm)}\noffset = {offset}\nbg_offset = 0\n\n"
         data_sdz += "[Data]\n" + "\n".join(processed_notes)
         sdx_zip.writestr('data.sdz', data_sdz)
