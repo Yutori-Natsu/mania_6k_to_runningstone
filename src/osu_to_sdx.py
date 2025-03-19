@@ -16,6 +16,7 @@ TRACK_MAPPINGS = {
     9: [1, 2, 3, 1, 2, 3, 1, 2, 3],
     10:[1, 2, 3, 1, 2, 3, 1, 2, 3, 2]
 }
+global_offset = 0.1
 
 def detect_key_mode(osu_path):
     """Detect the key mode from the .osu file based on CircleSize."""
@@ -76,8 +77,8 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
     timing_points = timing_points_match.group(1).strip().split('\n')
     first_timing_point = timing_points[0].split(',')
     first_bpm = 60000 / float(first_timing_point[1])
-    offset = int(first_timing_point[0]) / 1000
-    timing_changes = [(int(tp.split(',')[0]) / 1000, 60000 / float(tp.split(',')[1])) 
+    offset = int(first_timing_point[0]) / 1000 + global_offset
+    timing_changes = [(int(tp.split(',')[0]) / 1000 + global_offset, 60000 / float(tp.split(',')[1])) 
                       for tp in timing_points if float(tp.split(',')[1]) > 0]
 
     audio_filename = re.search(r'AudioFilename:\s*"?(.*?)"?\s*$', general, re.MULTILINE).group(1)
@@ -116,7 +117,7 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
 
         obj_data = obj.split(',')
         x = int(obj_data[0])
-        time = int(obj_data[2]) / 1000
+        time = int(obj_data[2]) / 1000 + global_offset
         obj_type = int(obj_data[3])
         track = track_map[x // (512 // key_mode)]
 
@@ -186,6 +187,11 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
             Image.open(bg_path).save(bg_png_path)
             bg_path = bg_png_path
         sdx_zip.write(bg_path, 'bg.png')
+        os.remove(bg_path)
+    
+    debug_path = os.path.basename(osu_path).replace('.osu', '.sdxdbg')
+    with open(os.path.join(output_dir, debug_path), 'w') as f:
+        f.write(f"data_sdz")
 
     if new_audio_path and os.path.exists(new_audio_path):
         os.remove(new_audio_path)
