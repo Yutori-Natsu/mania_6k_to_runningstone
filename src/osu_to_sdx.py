@@ -177,7 +177,7 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
         data_sdz += f"author = {metadata.get('Artist', 'Unknown')}\n"
         data_sdz += f"mapper = {mapper}\n"
         data_sdz += f"level = {difficulty}\n"  
-        data_sdz += f"bpm = {int(first_bpm)}\noffset = {offset}\nbg_offset = 0\n\n"
+        data_sdz += f"bpm = {round(first_bpm, 4)}\noffset = {offset}\nbg_offset = 0\n\n"
         data_sdz += "[Data]\n" + "\n".join(processed_notes)
         sdx_zip.writestr('data.sdz', data_sdz)
         sdx_zip.write(audio_path, 'music.mp3')
@@ -191,7 +191,7 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
     
     debug_path = os.path.basename(osu_path).replace('.osu', '.sdxdbg')
     with open(os.path.join(output_dir, debug_path), 'w') as f:
-        f.write(f"data_sdz")
+        f.write(data_sdz)
 
     if new_audio_path and os.path.exists(new_audio_path):
         os.remove(new_audio_path)
