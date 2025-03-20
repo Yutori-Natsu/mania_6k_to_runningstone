@@ -11,5 +11,7 @@ mania editor 中的 1~3 轨就是常规对应道路上的 1~3 轨，4~6 轨相�
 
 ln 头会被转化为绝赞，尾巴无视
 
+环境变量：在 /src 目录下创建文件 `userconfig.ini`，其中输入 `mapper=123` 可以在每次打开转换器时自动将 123 填入 mapper 内容
+
 ## License
 This project is licensed under the MIT License. See the [LICENSE](https://github.com/yukoimi/mania_to_runningstone/blob/main/LICENSE) file for details.
