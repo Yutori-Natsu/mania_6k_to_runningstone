@@ -44,18 +44,7 @@ def convert_audio_to_mp3(input_path, output_path):
         f.write(mp3_data)
 
 import sys
-def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
-    
-    if len(sys.argv) not in [1, 2, 3]:
-        print("Usage: ./osu_to_sdx.py, ./osu_to_sdx.py <Difficulty> or ./osu_to_sdx.py <Mapper> <Difficulty>")
-        sys.exit(1)
-    mapper = 'hanaraiN'
-    difficulty = 5
-    if len(sys.argv) == 3:
-        mapper = sys.argv[1]
-        difficulty = int(sys.argv[2])
-    if len(sys.argv) == 2:
-        difficulty = int(sys.argv[1])
+def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, progress_var=None):
 
     """Convert osu! file to .sdx format with proper BPM reset."""
     with open(osu_path, 'r', encoding='utf-8') as file:
@@ -201,17 +190,23 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
     return sdx_path
 
 def create_gui():
+    with open('config.ini') as f:
+        cfg = f.readlines()
+    
     """Create GUI for the converter."""
     root = tk.Tk()
     root.title("osu! to SDX Converter")
-    root.geometry("400x300")
+    root.geometry("400x400")
     root.resizable(False,False)
 
     
     osu_path_var = tk.StringVar()
     output_dir_var = tk.StringVar()
+    mapper = tk.StringVar()
+    custom_diff = tk.DoubleVar()
     progress_var = tk.DoubleVar()
 
+    mapper.set(cfg[0].split('=')[1].strip())
     
     tk.Label(root, text="osu! to SDX Converter", font=("Arial", 14)).pack(pady=10)
 
@@ -223,19 +218,24 @@ def create_gui():
     tk.Entry(root, textvariable=output_dir_var, width=40).pack()
     tk.Button(root, text="Browse", command=lambda: output_dir_var.set(filedialog.askdirectory())).pack()
 
-    tk.Button(root, text="Convert", command=lambda: convert_button(osu_path_var.get(), output_dir_var.get(), progress_var)).pack(pady=20)
+    tk.Label(root, text="Mapper:").pack()
+    tk.Entry(root, textvariable=mapper, width=40).pack()
+    tk.Label(root, text="Difficulty:").pack()
+    tk.Entry(root, textvariable=custom_diff, width=40).pack()
+
+    tk.Button(root, text="Convert", command=lambda: convert_button(osu_path_var.get(), output_dir_var.get(), mapper.get(), custom_diff.get(), progress_var)).pack(pady=20)
 
     progress_bar = ttk.Progressbar(root, variable=progress_var, maximum=100)
     progress_bar.pack(fill=tk.X, padx=20)
 
     root.mainloop()
 
-def convert_button(osu_path, output_dir, progress_var):
+def convert_button(osu_path, output_dir, mapper, custom_diff, progress_var):
     if not osu_path or not output_dir:
         messagebox.showwarning("Warning", "Please select both an .osu file and an output directory.")
         return
     try:
-        sdx_path = convert_osu_to_sdx(osu_path, output_dir, progress_var)
+        sdx_path = convert_osu_to_sdx(osu_path, output_dir, mapper, custom_diff, progress_var)
         messagebox.showinfo("Success", f"Conversion completed! SDX file saved to {sdx_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Conversion failed: {str(e)}")
