@@ -182,12 +182,15 @@ def convert_osu_to_sdx(osu_path, output_dir, progress_var=None):
         sdx_zip.writestr('data.sdz', data_sdz)
         sdx_zip.write(audio_path, 'music.mp3')
         bg_path = os.path.join(os.path.dirname(osu_path), background_filename)
+        remove = False
         if not background_filename.lower().endswith('.png'):
             bg_png_path = os.path.join(output_dir, 'bg.png')
             Image.open(bg_path).save(bg_png_path)
             bg_path = bg_png_path
+            remove = True
         sdx_zip.write(bg_path, 'bg.png')
-        os.remove(bg_path)
+        if remove:
+            os.remove(bg_path)
     
     debug_path = os.path.basename(osu_path).replace('.osu', '.sdxdbg')
     with open(os.path.join(output_dir, debug_path), 'w') as f:
