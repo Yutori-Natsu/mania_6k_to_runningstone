@@ -16,7 +16,6 @@ TRACK_MAPPINGS = {
     9: [1, 2, 3, 1, 2, 3, 1, 2, 3],
     10:[1, 2, 3, 1, 2, 3, 1, 2, 3, 2]
 }
-global_offset = 0.1
 
 def detect_key_mode(osu_path):
     """Detect the key mode from the .osu file based on CircleSize."""
@@ -44,8 +43,8 @@ def convert_audio_to_mp3(input_path, output_path):
         f.write(mp3_data)
 
 import sys
-def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, progress_var=None):
-
+def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, offset, progress_var=None):
+    global_offset = offset
     """Convert osu! file to .sdx format with proper BPM reset."""
     with open(osu_path, 'r', encoding='utf-8') as file:
         osu_content = file.read()
@@ -207,9 +206,11 @@ def create_gui():
     output_dir_var = tk.StringVar()
     mapper = tk.StringVar()
     custom_diff = tk.DoubleVar()
+    offset = tk.DoubleVar()
     progress_var = tk.DoubleVar()
 
     mapper.set(cfg[0].split('=')[1].strip())
+    offset.set(0.1)
     
     tk.Label(root, text="osu! to SDX Converter", font=("Arial", 14)).pack(pady=10)
 
@@ -225,20 +226,22 @@ def create_gui():
     tk.Entry(root, textvariable=mapper, width=40).pack()
     tk.Label(root, text="Difficulty:").pack()
     tk.Entry(root, textvariable=custom_diff, width=40).pack()
+    tk.Label(root, text="Offset:").pack()
+    tk.Entry(root, textvariable=offset, width=40).pack()
 
-    tk.Button(root, text="Convert", command=lambda: convert_button(osu_path_var.get(), output_dir_var.get(), mapper.get(), custom_diff.get(), progress_var)).pack(pady=20)
+    tk.Button(root, text="Convert", command=lambda: convert_button(osu_path_var.get(), output_dir_var.get(), mapper.get(), custom_diff.get(), offset.get(), progress_var)).pack(pady=20)
 
     progress_bar = ttk.Progressbar(root, variable=progress_var, maximum=100)
     progress_bar.pack(fill=tk.X, padx=20)
 
     root.mainloop()
 
-def convert_button(osu_path, output_dir, mapper, custom_diff, progress_var):
+def convert_button(osu_path, output_dir, mapper, custom_diff, offset, progress_var):
     if not osu_path or not output_dir:
         messagebox.showwarning("Warning", "Please select both an .osu file and an output directory.")
         return
     try:
-        sdx_path = convert_osu_to_sdx(osu_path, output_dir, mapper, custom_diff, progress_var)
+        sdx_path = convert_osu_to_sdx(osu_path, output_dir, mapper, custom_diff, offset, progress_var)
         messagebox.showinfo("Success", f"Conversion completed! SDX file saved to {sdx_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Conversion failed: {str(e)}")
