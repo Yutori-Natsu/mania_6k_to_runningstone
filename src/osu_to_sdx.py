@@ -190,8 +190,11 @@ def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, progress_var=No
     return sdx_path
 
 def create_gui():
-    with open('userconfig.ini') as f:
-        cfg = f.readlines()
+    try:
+        with open('userconfig.ini') as f:
+            cfg = f.readlines()
+    except:
+        cfg = ["mapper=Unknown"]
     
     """Create GUI for the converter."""
     root = tk.Tk()
