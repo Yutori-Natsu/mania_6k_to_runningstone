@@ -107,7 +107,8 @@ def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, offset, progres
         x = int(obj_data[0])
         time = int(obj_data[2]) / 1000 + global_offset
         obj_type = int(obj_data[3])
-        track = track_map[x // (512 // key_mode)]
+        orig_track = (x // (512 // key_mode))
+        track = track_map[orig_track]
 
         while timing_idx < len(timing_changes) and time >= timing_changes[timing_idx][0]:
             change_time, new_bpm = timing_changes[timing_idx]
@@ -132,14 +133,20 @@ def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, offset, progres
         numerator = int(fraction * denominator)
 
         obj_content = 'D'
-        obj_num = [1,2,4][(x // (512 // key_mode)) // 3]
+        obj_num = [1,2,2][orig_track // 3]
+        obj_in_air = False
 
         if obj_type & 128:  
             obj_content = 'X'
+        if orig_track >= 6:
+            obj_in_air = True
         
         key = (beat, numerator, denominator)
         if key not in used_times:
-            processed_notes.append(f"{obj_content},{beat},{numerator},{denominator},{track},{obj_num}")
+            if not obj_in_air:
+                processed_notes.append(f"{obj_content},{beat},{numerator},{denominator},{track},{obj_num}")
+            else:
+                processed_notes.append(f"{obj_content},{beat},{numerator},{denominator},{track},{obj_num},1")
             used_times[key] = obj_content
 
     while timing_idx < len(timing_changes):

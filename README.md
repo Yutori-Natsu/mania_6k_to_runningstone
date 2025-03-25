@@ -7,7 +7,7 @@ designed for my preference of beatmap conversion toolchain, mainly using mania 9
 
 usage: `./osu_to_sdx.py <mapper> <difficulty>`, `./osu_to_sdx.py <difficulty> (mapper default set to me)` or `./osu_to_sdx.py`
 
-mania editor 中的 123 轨就是常规对应道路上的 123 轨，456 轨相当于 123 轨上的 2 个重叠 note，789 轨相当于 5 个重叠 note，暂时不支持同一行写多押
+mania editor 中的 123 轨就是常规对应道路上的 123 轨，456 轨相当于 123 轨上的 2 个重叠 note，789 轨相当于 空中的一个note（出自海底谭）
 
 ln 头会被转化为绝赞，尾巴无视
 
