@@ -169,8 +169,8 @@ def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, offset, progres
     sdx_filename = os.path.basename(osu_path).replace('.osu', '.sdx')
     sdx_path = os.path.join(output_dir, sdx_filename)
     with zipfile.ZipFile(sdx_path, 'w') as sdx_zip:
-        data_sdz = f"[Meta]\ntitle = {metadata.get('Title', 'Unknown')}\n"
-        data_sdz += f"author = {metadata.get('Artist', 'Unknown')}\n"
+        data_sdz = f"[Meta]\ntitle = {metadata.get('TitleUnicode', 'Unknown')}\n"
+        data_sdz += f"author = {metadata.get('ArtistUnicode', 'Unknown')}\n"
         data_sdz += f"mapper = {mapper}\n"
         data_sdz += f"level = {difficulty}\n"  
         data_sdz += f"bpm = {round(first_bpm, 4)}\noffset = {offset}\nbg_offset = 0\n\n"
