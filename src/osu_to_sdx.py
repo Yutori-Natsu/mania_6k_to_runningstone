@@ -112,6 +112,7 @@ def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, offset, progres
 
         while timing_idx < len(timing_changes) and time >= timing_changes[timing_idx][0]:
             change_time, new_bpm = timing_changes[timing_idx]
+            new_bpm = round(new_bpm, 4)
             beat_time = (change_time - current_offset) * (current_bpm / 60)
             beat = int(beat_time)
             fraction = beat_time - beat
