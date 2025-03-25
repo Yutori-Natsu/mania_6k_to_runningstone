@@ -107,7 +107,7 @@ def convert_osu_to_sdx(osu_path, output_dir, mapper, difficulty, offset, progres
         x = int(obj_data[0])
         time = int(obj_data[2]) / 1000 + global_offset
         obj_type = int(obj_data[3])
-        orig_track = (x // (512 // key_mode))
+        orig_track = round(x / (512 / key_mode))
         track = track_map[orig_track]
 
         while timing_idx < len(timing_changes) and time >= timing_changes[timing_idx][0]:
